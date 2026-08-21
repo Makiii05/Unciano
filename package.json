@@ -1,0 +1,13 @@
+{
+    "name": "unciano-enrollment-system",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "tailwindcss -i ./src/input.css -o ./public/css/app.css --watch",
+        "build": "tailwindcss -i ./src/input.css -o ./public/css/app.css --minify"
+    },
+    "devDependencies": {
+        "tailwindcss": "^4.0.0",
+        "@tailwindcss/cli": "^4.0.0"
+    }
+}
