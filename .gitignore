@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+public/css/app.css
+package-lock.json
+composer.lock
+
+# Environment
+.env
+*.log
+
+# Implementation code (push structure only)
+*.php
+*.css
+*.sql
+package.json
+
+# Keep structure files
+!.gitkeep
+!README.md
+!enrollment-system-development-guide.md
