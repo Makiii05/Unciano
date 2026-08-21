@@ -11,7 +11,7 @@ $title = 'UCA Nexus - Enrollment Management System';
     <title><?= e($title) ?></title>
     <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
 </head>
-<body class="font-sans antialiased bg-gradient-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen">
+<body class="font-sans antialiased bg-linear-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen">
     <div class="min-h-screen flex flex-col items-center justify-center p-6">
         <div class="text-center mb-12">
             <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">

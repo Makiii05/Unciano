@@ -26,6 +26,10 @@ class AuthController
         $formAction = url("views/login/staff.php?type=" . urlencode($type));
         $backUrl = url('views/login/index.php');
 
+        ob_start();
+        require __DIR__ . '/../../views/login/forms/staff.php';
+        $content = ob_get_clean();
+
         require __DIR__ . '/../../views/layouts/auth.php';
     }
 
@@ -35,6 +39,10 @@ class AuthController
         $formAction = url('views/login/student.php');
         $backUrl = url('views/login/index.php');
 
+        ob_start();
+        require __DIR__ . '/../../views/login/forms/student.php';
+        $content = ob_get_clean();
+
         require __DIR__ . '/../../views/layouts/auth.php';
     }
 
@@ -43,6 +51,10 @@ class AuthController
         $title = 'Teacher Login';
         $formAction = url('views/login/teacher.php');
         $backUrl = url('views/login/index.php');
+
+        ob_start();
+        require __DIR__ . '/../../views/login/forms/teacher.php';
+        $content = ob_get_clean();
 
         require __DIR__ . '/../../views/layouts/auth.php';
     }
