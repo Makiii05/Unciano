@@ -9,9 +9,25 @@ $title = 'UCA Nexus - Enrollment Management System';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?></title>
-    <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
+                            600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
+                        },
+                        sidebar: { DEFAULT: '#0f172a', hover: '#1e293b', active: '#1e40af' }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="font-sans antialiased bg-linear-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen">
+<body class="font-sans antialiased bg-gradient-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen">
     <div class="min-h-screen flex flex-col items-center justify-center p-6">
         <div class="text-center mb-12">
             <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">

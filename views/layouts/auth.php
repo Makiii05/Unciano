@@ -7,9 +7,25 @@ $flash = get_flash();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($title) ?> - UCA Nexus</title>
-    <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
+                            600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
+                        },
+                        sidebar: { DEFAULT: '#0f172a', hover: '#1e293b', active: '#1e40af' }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="font-sans antialiased bg-linear-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen flex items-center justify-center p-4">
+<body class="font-sans antialiased bg-gradient-to-br from-primary-900 via-primary-800 to-sidebar min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
         <a href="<?= e($backUrl) ?>" class="inline-flex items-center text-primary-300/70 hover:text-primary-200 text-sm mb-6 transition-colors">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
