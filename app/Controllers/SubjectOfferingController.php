@@ -123,6 +123,59 @@ class SubjectOfferingController
         $this->json(['success' => true, 'data' => $prospectus]);
     }
 
+    public function departmentData(): void
+    {
+        ensureRegistrar();
+        $departmentId = (int) ($_GET['department_id'] ?? 0);
+        if ($departmentId <= 0) {
+            $this->json(['success' => false, 'message' => 'Department is required.'], 422);
+            return;
+        }
+        if (!$this->departmentService->getById($departmentId)) {
+            $this->json(['success' => false, 'message' => 'Department not found.'], 404);
+            return;
+        }
+
+        $curricula = array_values(array_filter(
+            $this->curriculumService->getAll(),
+            fn($curriculum) => (int) ($curriculum['department_id'] ?? 0) === $departmentId
+        ));
+
+        $this->json([
+            'success' => true,
+            'data' => [
+                'terms' => $this->getTermsByDepartment($departmentId),
+                'curricula' => $curricula,
+                'programs' => $this->programService->getByDepartment($departmentId),
+                'grading_systems' => $this->gradingSystemService->getByDepartment($departmentId),
+            ],
+        ]);
+    }
+
+    public function offeringsByTerm(): void
+    {
+        ensureRegistrar();
+        $termId = (int) ($_GET['term_id'] ?? 0);
+        $departmentId = (int) ($_GET['department_id'] ?? 0);
+        if ($termId <= 0) {
+            $this->json(['success' => false, 'message' => 'Academic term is required.'], 422);
+            return;
+        }
+        if (!$this->academicTermService->getById($termId)) {
+            $this->json(['success' => false, 'message' => 'Academic term not found.'], 404);
+            return;
+        }
+
+        $offerings = $this->subjectOfferingService->getByTerm($termId);
+        if ($departmentId > 0) {
+            $offerings = array_values(array_filter(
+                $offerings,
+                fn($offering) => (int) ($offering['department_id'] ?? 0) === $departmentId
+            ));
+        }
+        $this->json(['success' => true, 'data' => $offerings]);
+    }
+
     public function searchSubjects(): void
     {
         ensureRegistrar();
@@ -302,6 +355,8 @@ class SubjectOfferingController
             $gs = $this->gradingSystemService->getById($gradingId);
             if (!$gs) $errors[] = 'Invalid grading system.';
             elseif ((int) $gs['department_id'] !== $departmentId) $errors[] = 'Grading system does not belong to selected department.';
+        } else {
+            $errors[] = 'Grading system is required.';
         }
         if ($classSize < 1 || $classSize > 500) {
             $errors[] = 'Class size must be between 1 and 500.';

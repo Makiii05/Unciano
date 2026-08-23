@@ -1,5 +1,5 @@
 <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-    <form method="GET" action="<?= url('views/registrar/subject-offerings/index.php') ?>" class="flex flex-wrap items-end gap-4">
+    <form method="GET" action="<?= url('views/registrar/subject-offerings/index.php') ?>" id="subject-offering-filter-form" class="flex flex-wrap items-end gap-4">
         <div class="flex-1 min-w-[180px]">
             <label class="block text-sm font-medium text-slate-700 mb-1">Department</label>
             <select name="department_id" id="filter-department" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
@@ -28,7 +28,7 @@
             </select>
         </div>
         <input type="hidden" name="tab" id="filter-tab" value="<?= e($tab ?? 'prospectus') ?>">
-        <button type="submit" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">Filter</button>
+        <button type="submit" class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors">Apply</button>
     </form>
 </div>
 
@@ -49,22 +49,36 @@
                     <p class="text-center text-slate-400 py-8">Select a curriculum to view prospectus.</p>
                 <?php else: ?>
                     <div id="prospectus-list" class="space-y-4">
-                        <?php
-                        // Group by program -> level -> term for display similar to Laravel
-                        $grouped = [];
-                        foreach ($prospectus as $p) {
-                            $progId = $p['program_id'] ?? $p['level_program_id'] ?? 0;
-                            $grouped[$progId][] = $p;
-                        }
-                        ?>
-                        <?php foreach ($prospectus as $p): ?>
-                            <div class="border border-slate-200 rounded-lg p-3 flex items-center justify-between hover:bg-slate-50">
-                                <div>
-                                    <p class="text-sm font-medium text-slate-800"><?= e($p['subject_code'] ?? $p['subject_description'] ?? 'Subject') ?> - <?= e($p['subject_description'] ?? '') ?></p>
-                                    <p class="text-xs text-slate-500">Level: <?= e($p['level_description'] ?? $p['level_code'] ?? '') ?> | Term: <?= e($p['term_description'] ?? $p['term_code'] ?? '') ?></p>
-                                </div>
-                                <button onclick="openAddProspectusModal(<?= (int) $p['id'] ?>, <?= (int) $p['subject_id'] ?>)" class="px-3 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded">Add</button>
-                            </div>
+                        <?php $grouped = []; foreach ($prospectus as $p) { $grouped[$p['level_id'] ?? 0][$p['term_id'] ?? 0][] = $p; } ?>
+                        <?php foreach ($grouped as $levelItems): ?>
+                            <?php $levelFirst = reset($levelItems)[0]; ?>
+                            <details class="border border-slate-200 rounded-lg overflow-hidden" open>
+                                <summary class="cursor-pointer px-4 py-3 bg-slate-50 text-sm font-semibold text-slate-800">
+                                    <?= e(($levelFirst['program_code'] ?? '') . ' - ' . ($levelFirst['level_code'] ?? $levelFirst['level_description'] ?? 'Level')) ?>
+                                </summary>
+                                <?php foreach ($levelItems as $termItems): ?>
+                                    <?php $termFirst = $termItems[0]; ?>
+                                    <div class="border-t border-slate-200">
+                                        <h5 class="px-4 py-3 text-sm font-medium text-slate-700"><?= e($termFirst['term_description'] ?? $termFirst['term_code'] ?? 'Term') ?></h5>
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-left">
+                                                <thead class="bg-slate-50/70 text-xs uppercase tracking-wider text-slate-500">
+                                                    <tr><th class="px-4 py-2 font-medium">Subject</th><th class="px-4 py-2 font-medium">Units</th><th class="px-4 py-2 text-right font-medium">Action</th></tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($termItems as $p): ?>
+                                                        <tr class="border-t border-slate-100 hover:bg-slate-50">
+                                                            <td class="px-4 py-3"><p class="text-sm font-medium text-slate-800"><?= e($p['subject_code'] ?? '—') ?> - <?= e($p['subject_description'] ?? '—') ?></p></td>
+                                                            <td class="px-4 py-3 text-sm text-slate-600"><?= e($p['unit'] ?? '—') ?></td>
+                                                            <td class="px-4 py-3 text-right"><button onclick="openAddProspectusModal(<?= (int) $p['id'] ?>, <?= (int) $p['subject_id'] ?>)" class="px-3 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded">Add</button></td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </details>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
@@ -95,7 +109,7 @@
                     <p class="text-center text-slate-400 py-8">No subject offerings for this term yet.</p>
                 <?php else: ?>
                     <?php foreach ($offerings as $off): ?>
-                        <div class="border border-slate-200 rounded-lg p-3 flex items-center justify-between">
+                        <div data-offering-id="<?= (int) $off['id'] ?>" class="border border-slate-200 rounded-lg p-3 flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-slate-800"><?= e($off['code']) ?></p>
                                 <p class="text-xs text-slate-500"><?= e($off['subject_code']) ?> - <?= e($off['subject_description']) ?> | <?= e($off['program_code'] ?? '') ?> | Class: <?= e($off['class_size']) ?></p>
@@ -114,10 +128,12 @@
 
 <script>
     const prospectusUrl = "<?= url('api/subject-offerings/prospectus-subjects.php') ?>";
+    const departmentDataUrl = "<?= url('api/subject-offerings/department-data.php') ?>";
+    const offeringsUrl = "<?= url('api/subject-offerings/offerings-by-term.php') ?>";
     const searchUrl = "<?= url('api/subject-offerings/search-subjects.php') ?>";
     const levelsUrl = "<?= url('api/subject-offerings/levels-by-program.php') ?>";
-    const programs = <?= json_encode($programs ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-    const gradingSystems = <?= json_encode($gradingSystems ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    let programs = <?= json_encode($programs ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    let gradingSystems = <?= json_encode($gradingSystems ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     let currentTab = "<?= e($tab ?? 'prospectus') ?>";
 
     function setTab(tab) {
@@ -130,35 +146,170 @@
     }
     setTab(currentTab);
 
-    // Department change: reload page with filter (simpler than AJAX for now)
-    // Alternatively, we could fetch terms/curricula via API, but form submit is simpler
-    document.getElementById('filter-department')?.addEventListener('change', function() {
-        // Clear term and curriculum when department changes, let user re-select
-        // We could auto-submit, but keep manual Filter button
+    const filterForm = document.getElementById('subject-offering-filter-form');
+    const departmentSelect = document.getElementById('filter-department');
+    const termSelect = document.getElementById('filter-term');
+    const curriculumSelect = document.getElementById('filter-curriculum');
+
+    function setSelectMessage(select, message) {
+        select.innerHTML = '<option value="">' + escapeHtml(message) + '</option>';
+        select.disabled = true;
+    }
+
+    function updateFilterUrl() {
+        const params = new URLSearchParams();
+        if (departmentSelect.value) params.set('department_id', departmentSelect.value);
+        if (termSelect.value) params.set('term', termSelect.value);
+        if (curriculumSelect.value) params.set('curriculum', curriculumSelect.value);
+        if (currentTab) params.set('tab', currentTab);
+        window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params : ''));
+    }
+
+    function populateSelect(select, items, label, formatter) {
+        select.innerHTML = '<option value="">Select ' + label + '</option>';
+        items.forEach(function(item) {
+            const option = document.createElement('option');
+            option.value = item.id;
+            option.textContent = formatter(item);
+            select.appendChild(option);
+        });
+        select.disabled = false;
+    }
+
+    async function loadDepartmentData(departmentId) {
+        if (!departmentId) {
+            setSelectMessage(termSelect, 'Select department first');
+            setSelectMessage(curriculumSelect, 'Select department first');
+            renderProspectus([]);
+            renderOfferings([]);
+            return;
+        }
+        setSelectMessage(termSelect, 'Loading terms...');
+        setSelectMessage(curriculumSelect, 'Loading curricula...');
+        try {
+            const response = await fetch(departmentDataUrl + '?department_id=' + encodeURIComponent(departmentId));
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load department data.');
+            populateSelect(termSelect, result.data.terms || [], 'term', function(term) {
+                return (term.code || term.description || 'Term') + ' - ' + (term.description || '');
+            });
+            populateSelect(curriculumSelect, result.data.curricula || [], 'curriculum', function(curriculum) {
+                return curriculum.curriculum || 'Curriculum';
+            });
+            programs = result.data.programs || [];
+            gradingSystems = result.data.grading_systems || [];
+            renderProspectus([]);
+            renderOfferings([]);
+        } catch (error) {
+            setSelectMessage(termSelect, 'Unable to load terms');
+            setSelectMessage(curriculumSelect, 'Unable to load curricula');
+            renderProspectusMessage(error.message);
+            renderOfferingsMessage(error.message);
+        }
+    }
+
+    function renderProspectusMessage(message) {
+        document.getElementById('prospectus-results').innerHTML = '<p class="text-center text-slate-400 py-8">' + escapeHtml(message) + '</p>';
+    }
+
+    function renderProspectus(items) {
+        if (!items.length) {
+            renderProspectusMessage(curriculumSelect.value ? 'No prospectus subjects found.' : 'Select a curriculum to view prospectus.');
+            return;
+        }
+        const grouped = {};
+        items.forEach(function(item) {
+            const levelKey = item.level_id || 'unknown-level';
+            const termKey = item.term_id || 'unknown-term';
+            if (!grouped[levelKey]) grouped[levelKey] = { label: (item.program_code ? item.program_code + ' - ' : '') + (item.level_code || item.level_description || 'Level'), terms: {} };
+            if (!grouped[levelKey].terms[termKey]) grouped[levelKey].terms[termKey] = { label: item.term_description || item.term_code || 'Term', items: [] };
+            grouped[levelKey].terms[termKey].items.push(item);
+        });
+        const html = Object.values(grouped).map(function(level) {
+            const termsHtml = Object.values(level.terms).map(function(term) {
+                const subjectsHtml = term.items.map(function(item) {
+                    return '<tr class="border-t border-slate-100 hover:bg-slate-50"><td class="px-4 py-3"><p class="text-sm font-medium text-slate-800">' + escapeHtml(item.subject_code || item.subject_description || 'Subject') + ' - ' + escapeHtml(item.subject_description || '') + '</p></td><td class="px-4 py-3 text-sm text-slate-600">' + escapeHtml(item.unit == null ? '—' : String(item.unit)) + '</td><td class="px-4 py-3 text-right"><button onclick="openAddProspectusModal(' + Number(item.id) + ', ' + Number(item.subject_id) + ')" class="px-3 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded">Add</button></td></tr>';
+                }).join('');
+                return '<div class="border-t border-slate-200"><h5 class="px-4 py-3 text-sm font-medium text-slate-700">' + escapeHtml(term.label) + '</h5><div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-50/70 text-xs uppercase tracking-wider text-slate-500"><tr><th class="px-4 py-2 font-medium">Subject</th><th class="px-4 py-2 font-medium">Units</th><th class="px-4 py-2 text-right font-medium">Action</th></tr></thead><tbody>' + subjectsHtml + '</tbody></table></div></div>';
+            }).join('');
+            return '<details class="border border-slate-200 rounded-lg overflow-hidden" open><summary class="cursor-pointer px-4 py-3 bg-slate-50 text-sm font-semibold text-slate-800">' + escapeHtml(level.label) + '</summary>' + termsHtml + '</details>';
+        }).join('');
+        document.getElementById('prospectus-results').innerHTML = '<div id="prospectus-list" class="space-y-4">' + html + '</div>';
+    }
+
+    function renderOfferingsMessage(message) {
+        document.getElementById('offering-list').innerHTML = '<p class="text-center text-slate-400 py-8">' + escapeHtml(message) + '</p>';
+        document.getElementById('offering-count').textContent = '0 offering(s)';
+    }
+
+    function renderOfferings(items) {
+        if (!items.length) {
+            renderOfferingsMessage(termSelect.value ? 'No subject offerings for this term yet.' : 'Select an academic term to view offerings.');
+            return;
+        }
+        document.getElementById('offering-list').innerHTML = items.map(function(item) {
+            return '<div data-offering-id="' + Number(item.id) + '" class="border border-slate-200 rounded-lg p-3 flex items-center justify-between"><div><p class="text-sm font-medium text-slate-800">' + escapeHtml(item.code || '') + '</p><p class="text-xs text-slate-500">' + escapeHtml(item.subject_code || '') + ' - ' + escapeHtml(item.subject_description || '') + ' | ' + escapeHtml(item.program_code || '') + ' | Class: ' + escapeHtml(String(item.class_size || '')) + '</p></div><button onclick="confirmDeleteOffering(' + Number(item.id) + ', ' + escapeHtml(JSON.stringify(item.code || '')) + ')" class="px-3 py-1 text-xs font-medium text-red-500 hover:bg-red-50 rounded">Delete</button></div>';
+        }).join('');
+        document.getElementById('offering-count').textContent = items.length + ' offering(s)';
+    }
+
+    async function loadProspectus(curriculumId) {
+        if (!curriculumId) {
+            renderProspectus([]);
+            return;
+        }
+        renderProspectusMessage('Loading prospectus...');
+        try {
+            const response = await fetch(prospectusUrl + '?curriculum_id=' + encodeURIComponent(curriculumId));
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load prospectus.');
+            renderProspectus(result.data || []);
+        } catch (error) {
+            renderProspectusMessage(error.message);
+        }
+    }
+
+    async function loadOfferings(termId) {
+        if (!termId) {
+            renderOfferings([]);
+            return;
+        }
+        renderOfferingsMessage('Loading offerings...');
+        try {
+            const query = '?term_id=' + encodeURIComponent(termId) + '&department_id=' + encodeURIComponent(departmentSelect.value);
+            const response = await fetch(offeringsUrl + query);
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load offerings.');
+            renderOfferings(result.data || []);
+        } catch (error) {
+            renderOfferingsMessage(error.message);
+        }
+    }
+
+    departmentSelect?.addEventListener('change', async function() {
+        termSelect.value = '';
+        curriculumSelect.value = '';
+        await loadDepartmentData(this.value);
+        updateFilterUrl();
+    });
+
+    termSelect?.addEventListener('change', function() {
+        loadOfferings(this.value);
+        updateFilterUrl();
     });
 
     // Prospectus curriculum change -> fetch prospectus list
-    document.getElementById('filter-curriculum')?.addEventListener('change', async function() {
+    curriculumSelect?.addEventListener('change', async function() {
         const curriculumId = this.value;
-        const container = document.getElementById('prospectus-list') || document.getElementById('prospectus-results');
-        if (!curriculumId) {
-            if (container) container.innerHTML = '<p class="text-center text-slate-400 py-8">Select a curriculum to view prospectus.</p>';
-            return;
-        }
-        try {
-            const res = await fetch(prospectusUrl + "?curriculum_id=" + encodeURIComponent(curriculumId));
-            const data = await res.json();
-            if (data.success && data.data) {
-                let html = '<div class="space-y-2">';
-                data.data.forEach(function(p) {
-                    html += '<div class="border border-slate-200 rounded-lg p-3 flex items-center justify-between hover:bg-slate-50"><div><p class="text-sm font-medium text-slate-800">' + escapeHtml(p.subject_code || p.subject_description || 'Subject') + ' - ' + escapeHtml(p.subject_description || '') + '</p><p class="text-xs text-slate-500">Level: ' + escapeHtml(p.level_description || p.level_code || '') + ' | Term: ' + escapeHtml(p.term_description || p.term_code || '') + '</p></div><button onclick="openAddProspectusModal(' + p.id + ', ' + p.subject_id + ')" class="px-3 py-1 text-xs font-medium bg-primary-600 hover:bg-primary-700 text-white rounded">Add</button></div>';
-                });
-                html += '</div>';
-                if (container) container.innerHTML = html;
-            }
-        } catch (e) {
-            console.error(e);
-        }
+        await loadProspectus(curriculumId);
+        updateFilterUrl();
+    });
+
+    filterForm?.addEventListener('submit', function(event) {
+        event.preventDefault();
+        updateFilterUrl();
+        loadProspectus(curriculumSelect.value);
+        loadOfferings(termSelect.value);
     });
 
     let searchTimer = null;
@@ -193,7 +344,7 @@
     }
 
     function gradingSelectOptions() {
-        let html = '<option value="">Select grading system (optional)</option>';
+        let html = '<option value="">Select grading system</option>';
         gradingSystems.forEach(function(gs) {
             html += '<option value="' + gs.id + '">' + escapeHtml(gs.description) + ' (' + gs.total_percentage + '%)</option>';
         });
@@ -325,9 +476,44 @@
         document.getElementById('delete-offering-modal').showModal();
     }
 
+    document.getElementById('delete-offering-form')?.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const form = event.target;
+        const id = document.getElementById('delete-offering-id').value;
+        const submitButton = form.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: new FormData(form)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to delete offering.');
+            const offering = document.querySelector('#offering-list [data-offering-id="' + id + '"]');
+            if (offering) offering.remove();
+            const remaining = document.querySelectorAll('#offering-list > .border').length;
+            document.getElementById('offering-count').textContent = remaining + ' offering(s)';
+            if (!remaining) renderOfferingsMessage('No subject offerings for this term yet.');
+            document.getElementById('delete-offering-modal').close();
+            loadOfferings(termSelect.value);
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+
     function escapeHtml(str) {
         const div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
+    }
+
+    if (curriculumSelect.value) {
+        loadProspectus(curriculumSelect.value);
     }
 </script>

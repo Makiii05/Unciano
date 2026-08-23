@@ -90,6 +90,21 @@ class ProspectusController
         $this->json(['success' => true, 'data' => $curricula]);
     }
 
+    public function levelsByDepartment(): void
+    {
+        ensureRegistrar();
+        $departmentId = (int) ($_GET['department_id'] ?? 0);
+        if ($departmentId <= 0) {
+            $this->json(['success' => false, 'message' => 'Department is required.'], 422);
+            return;
+        }
+        if (!$this->departmentService->getById($departmentId)) {
+            $this->json(['success' => false, 'message' => 'Department not found.'], 404);
+            return;
+        }
+        $this->json(['success' => true, 'data' => $this->filterLevelsByDepartment([], $departmentId)]);
+    }
+
     public function store(): void
     {
         ensureRegistrar();
@@ -203,6 +218,8 @@ class ProspectusController
         }
         if ($data['level_id'] <= 0 || !$this->levelService->getById($data['level_id'])) {
             $errors[] = 'Valid level is required.';
+        } elseif (!$this->levelBelongsToCurriculumDepartment($data['level_id'], $data['curriculum_id'])) {
+            $errors[] = 'Selected level does not belong to the curriculum department.';
         }
         if ($data['term_id'] <= 0 || !$this->academicTermService->getById($data['term_id'])) {
             $errors[] = 'Valid academic term is required.';
@@ -264,6 +281,20 @@ class ProspectusController
             return $stmt->fetchAll();
         } catch (\Throwable $e) {
             return [];
+        }
+    }
+
+    private function levelBelongsToCurriculumDepartment(int $levelId, int $curriculumId): bool
+    {
+        try {
+            $db = \App\Core\Database::connection();
+            $stmt = $db->prepare(
+                'SELECT 1 FROM levels l JOIN programs p ON p.id = l.program_id JOIN curricula c ON c.department_id = p.department_id WHERE l.id = ? AND c.id = ? LIMIT 1'
+            );
+            $stmt->execute([$levelId, $curriculumId]);
+            return (bool) $stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 

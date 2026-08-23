@@ -31,8 +31,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Grading System (optional)</label>
-                    <select name="grading_id" id="add-offering-grading_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Grading System</label>
+                    <select name="grading_id" id="add-offering-grading_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" required>
                         <option value="">Select grading system</option>
                     </select>
                 </div>

@@ -142,6 +142,7 @@
 <script>
     const curriculaData = <?= json_encode($curricula ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const allLevels = <?= json_encode($allLevels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    let filteredLevels = <?= json_encode($levels ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const prospectusData = <?= json_encode($prospectus ?? [], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const selectedCurriculum = <?= json_encode($selectedCurriculum ?? null, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     const newProspectusId = <?= json_encode($newProspectusId) ?>;
@@ -153,18 +154,7 @@
             const currentVal = select.value;
             select.innerHTML = '<option value="">Select level</option>';
             if (!deptId) return;
-            // Filter levels where program's department matches
-            // allLevels have program_id, need to map via programs? Instead we fetch filtered from server? For now filter client-side if level has department info
-            // Our allLevels currently lacks program department; we will refetch via filteredLevels logic: we have levels array passed as filtered already, so use that
-            // Actually we have `levels` variable filtered server-side; use allLevels with program check via extra fetch
-            // Simple: if level has program_id, we can assume filteredLevels is provided via window
-            // For vanilla, we will populate from `filteredLevels` if available
-            let filtered = [];
-            if (window.filteredLevels && window.filteredLevels.length) {
-                filtered = window.filteredLevels.filter(function(l) { return true; });
-            } else {
-                filtered = allLevels;
-            }
+            const filtered = filteredLevels;
             filtered.forEach(function(l) {
                 const opt = document.createElement('option');
                 opt.value = l.id;
@@ -190,8 +180,12 @@
             // Populate levels - fetch via filteredLevels endpoint? For now use server-provided levels filtered
             // We will fetch curricula via API
             try {
-                const res = await fetch("<?= url('api/prospectus/curricula-by-department.php') ?>?department_id=" + encodeURIComponent(deptId));
-                const data = await res.json();
+                const [curriculaRes, levelsRes] = await Promise.all([
+                    fetch("<?= url('api/prospectus/curricula-by-department.php') ?>?department_id=" + encodeURIComponent(deptId)),
+                    fetch("<?= url('api/prospectus/levels-by-department.php') ?>?department_id=" + encodeURIComponent(deptId))
+                ]);
+                const data = await curriculaRes.json();
+                const levelsData = await levelsRes.json();
                 if (data.success && data.data) {
                     data.data.forEach(function(c) {
                         const opt = document.createElement('option');
@@ -201,11 +195,10 @@
                     });
                     currSelect.disabled = false;
                 }
+                filteredLevels = levelsData.success ? (levelsData.data || []) : [];
             } catch (e) {
                 console.error(e);
             }
-            // Also update create modal level dropdown via fetch levels filtered? We have levels already filtered server-side, but for dynamic we need to refetch levels
-            // For simplicity, keep allLevels and filter client-side if we had program department mapping - will use current `levels` variable which is filtered
             populateLevels(deptId);
         });
     }

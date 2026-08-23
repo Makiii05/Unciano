@@ -18,7 +18,7 @@
                     <label class="block text-sm font-medium text-slate-700 mb-1">Level</label>
                     <select name="level_id" id="edit-level_id" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none" required>
                         <option value="">Select level</option>
-                        <?php foreach ($allLevels as $lvl): ?>
+                        <?php foreach ($levels as $lvl): ?>
                             <option value="<?= e($lvl['id']) ?>"><?= e($lvl['code'] ?? '') ?> - <?= e($lvl['description'] ?? '') ?></option>
                         <?php endforeach; ?>
                     </select>
