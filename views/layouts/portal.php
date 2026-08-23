@@ -23,7 +23,41 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="<?= csrf_token() ?>">
     <title><?= e($pageTitle ?? 'Dashboard') ?> - UCA Nexus</title>
-    <link rel="stylesheet" href="<?= url('public/css/app.css') ?>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe',
+                            300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6',
+                            600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a'
+                        },
+                        sidebar: { DEFAULT: '#0f172a', hover: '#1e293b', active: '#1e40af' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        dialog.modal[open] {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            padding: 1rem;
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+        dialog.modal::backdrop {
+            background: rgba(0, 0, 0, 0.4);
+        }
+    </style>
 </head>
 <body class="font-sans antialiased bg-slate-100">
     <div class="flex h-screen overflow-hidden">
@@ -45,7 +79,7 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                 $sidebar = match($type) {
                     'admin' => [
                         ['label' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
-                        ['label' => 'Accounts', 'url' => '/admin/users/index.php', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z'],
+                        ['label' => 'Accounts', 'url' => '/admin/accounts/index.php', 'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z'],
                     ],
                     'registrar' => [
                         ['section' => 'General', 'items' => [
@@ -79,25 +113,25 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                         ]],
                         ['section' => 'Payments', 'items' => [
                             ['label' => 'Cashier', 'url' => '/accounting/cashier/index.php', 'icon' => 'M3 10h18M7 15h2m4 0h2M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2zM5 13h14'],
-                            ['label' => 'Payment Details', 'url' => '/accounting/payment-details/index.php', 'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'],
+                            // ['label' => 'Payment Details', 'url' => '/accounting/payment-details/index.php', 'icon' => 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z'],
                         ]],
-                        ['section' => 'Billing', 'items' => [
-                            ['label' => 'Fees', 'url' => '/accounting/fees/index.php', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
-                            ['label' => 'Assessment', 'url' => '/accounting/assessment/index.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
-                        ]],
+                        // ['section' => 'Billing', 'items' => [
+                        //     ['label' => 'Fees', 'url' => '/accounting/fees/index.php', 'icon' => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+                        //     ['label' => 'Assessment', 'url' => '/accounting/assessment/index.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+                        // ]],
                     ],
                     'admission' => [
                         ['section' => 'General', 'items' => [
                             ['label' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
-                            ['label' => 'Applicants', 'url' => '/admission/applicants/index.php', 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'],
-                            ['label' => 'Schedules', 'url' => '/admission/schedules/index.php', 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
+                            // ['label' => 'Applicants', 'url' => '/admission/applicants/index.php', 'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'],
+                            // ['label' => 'Schedules', 'url' => '/admission/schedules/index.php', 'icon' => 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
                         ]],
-                        ['section' => 'Admission Process', 'items' => [
-                            ['label' => 'Interviews', 'url' => '/admission/interviews/index.php', 'icon' => 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'],
-                            ['label' => 'Examinations', 'url' => '/admission/examinations/index.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
-                            ['label' => 'Final Evaluations', 'url' => '/admission/evaluations/index.php', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
-                            ['label' => 'Admitted Students', 'url' => '/admission/admitted/index.php', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222'],
-                        ]],
+                        // ['section' => 'Admission Process', 'items' => [
+                        //     ['label' => 'Interviews', 'url' => '/admission/interviews/index.php', 'icon' => 'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z'],
+                        //     ['label' => 'Examinations', 'url' => '/admission/examinations/index.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+                        //     ['label' => 'Final Evaluations', 'url' => '/admission/evaluations/index.php', 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+                        //     ['label' => 'Admitted Students', 'url' => '/admission/admitted/index.php', 'icon' => 'M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222'],
+                        // ]],
                     ],
                     'department' => [
                         ['section' => 'General', 'items' => [
@@ -126,11 +160,11 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                             ['label' => 'Subjects', 'url' => '/student/subjects.php', 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
                             ['label' => 'Grades', 'url' => '/student/grades.php', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
                         ]],
-                        ['section' => 'Finance', 'items' => [
-                            ['label' => 'Ledger', 'url' => '/student/ledger.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
-                        ]],
+                        // ['section' => 'Finance', 'items' => [
+                        //     ['label' => 'Ledger', 'url' => '/student/ledger.php', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+                        // ]],
                         ['section' => 'Account', 'items' => [
-                            ['label' => 'Examination Permit', 'url' => '/student/permit.php', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+                            // ['label' => 'Examination Permit', 'url' => '/student/permit.php', 'icon' => 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
                             ['label' => 'Change Password', 'url' => '/student/password.php', 'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'],
                         ]],
                     ],
@@ -154,8 +188,7 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                         <?php foreach ($group['items'] as $item): ?>
                             <?php
                             $itemUrl = $base . $item['url'];
-                            $isActive = str_starts_with($currentUrl, $item['url']) && $item['url'] !== '/dashboard.php'
-                                || ($item['url'] === '/dashboard.php' && $currentUrl === '/unciano/dashboard.php');
+                            $isActive = str_contains($currentUrl, $item['url']);
                             ?>
                             <a href="<?= e($itemUrl) ?>"
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 <?= $isActive ? 'bg-sidebar-active text-white' : 'text-white/70 hover:bg-sidebar-hover hover:text-white' ?>">
@@ -168,8 +201,7 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                     <?php else: ?>
                         <?php
                         $itemUrl = $base . $group['url'];
-                        $isActive = str_starts_with($currentUrl, $group['url']) && $group['url'] !== '/dashboard.php'
-                            || ($group['url'] === '/dashboard.php' && $currentUrl === '/unciano/dashboard.php');
+                        $isActive = str_contains($currentUrl, $group['url']);
                         ?>
                         <a href="<?= e($itemUrl) ?>"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 <?= $isActive ? 'bg-sidebar-active text-white' : 'text-white/70 hover:bg-sidebar-hover hover:text-white' ?>">
