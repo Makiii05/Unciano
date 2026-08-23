@@ -74,74 +74,77 @@ JavaScript
 Current structure in use (Apache + Laragon at `/laravel_project/unciano`):
 
 ```text
-unciano/
+unciano/  (Apache Laragon: http://localhost/laravel_project/unciano)
 │
-├── app/                          # Application logic
-│   ├── Controllers/              # Handle HTTP requests (one per domain)
-│   │   ├── AuthController.php
-│   │   ├── DashboardController.php
-│   │   ├── AccountController.php
-│   │   └── ...
-│   ├── Services/                 # Business logic + PDO
-│   │   ├── AuthService.php
-│   │   ├── AccountService.php
-│   │   ├── DepartmentService.php
+├── app/
+│   ├── Controllers/              # Thin: receive input → call Service → view/JSON/redirect
+│   │   ├── AuthController.php, DashboardController.php
+│   │   ├── AccountController.php          # admin: Accounts (faculty/teacher/student)
+│   │   ├── DepartmentController.php, SchoolYearController.php, ProgramController.php
+│   │   ├── LevelController.php, CurriculumController.php, AcademicTermController.php
+│   │   ├── SubjectController.php          # + prerequisites JSON (no fees per current scope)
+│   │   └── ProspectusController.php       # curriculum→level→term→subject mapping
+│   ├── Services/                 # Business logic + PDO (validation, duplicate, hasDependents, transactions)
+│   │   ├── AuthService.php, AccountService.php, DepartmentService.php
+│   │   ├── SchoolYearService.php, ProgramService.php, LevelService.php
+│   │   ├── CurriculumService.php, AcademicTermService.php
+│   │   ├── SubjectService.php, ProspectusService.php
 │   │   └── ...
 │   ├── Core/
-│   │   └── Database.php          # PDO singleton
+│   │   └── Database.php          # PDO singleton (Database::connection())
 │   └── Helpers/
-│       └── functions.php         # url(), e(), csrf_*, auth(), flash(), redirect()
+│       ├── functions.php         # url(), e(), old(), redirect(), flash/get_flash(), csrf_token/field/validate_csrf(), auth()/require_auth() (web|student|teacher)
+│       └── middleware.php        # ensureAdmin(), ensureRegistrar() strict, ensureRole(array) – global, camelCase
 │
-├── views/                        # Page templates (direct URL = file path per §3.1)
+├── views/                        # Page templates – URL = file path (§3.1)
 │   ├── layouts/
-│   │   ├── portal.php            # Shared sidebar + header (type-based nav)
-│   │   └── auth.php              # Login layout
-│   ├── includes/
-│   │   └── flash.php             # Flash message partial
-│   ├── login/                    # Login portal selector + forms
-│   │   ├── index.php
-│   │   ├── staff.php
-│   │   ├── student.php
-│   │   ├── teacher.php
-│   │   └── forms/
-│   ├── dashboard.php             # Shared dashboard router → DashboardController
-│   ├── admin/                    # System admin portal (Accounts, Dashboard)
-│   │   ├── index.php
+│   │   ├── portal.php            # Sidebar + header (type-based nav, dialog.modal[open] + ::backdrop CSS, active via str_contains)
+│   │   └── auth.php              # Login layout (CDN Tailwind)
+│   ├── includes/flash.php
+│   ├── login/{index.php,staff.php,student.php,teacher.php,forms/}
+│   ├── dashboard.php             # → DashboardController → views/{type}/index.php
+│   ├── admin/
+│   │   ├── index.php             # dashboard fragment
 │   │   └── accounts/
-│   │       ├── index.php
-│   │       └── partials/
-│   ├── registrar/                # Registrar portal (12 modules)
-│   ├── admission/                # Admissions portal
-│   ├── department/               # Department head portal
-│   ├── accounting/               # Accounting/cashier portal
-│   ├── student/                  # Student self-service portal
-│   ├── teacher/                  # Teacher portal
-│   └── application/              # Public application form
+│   │       ├── index.php         # router: bootstrap → AccountController::index()
+│   │       ├── index.view.php    # display: 3 tabs faculty/teacher/student + tables + JS
+│   │       ├── partials/{create-user,edit-user,edit-teacher,edit-student,change-password,delete}-modal.php # <dialog class="modal">
+│   │       └── actions/{store-user,update-user,delete-user,update-teacher,delete-teacher,update-student,delete-student,change-password-*}.php # POST → Controller → flash+redirect
+│   ├── registrar/                # Registrar portal – Academic (built)
+│   │   ├── index.php             # fragment for dashboard
+│   │   ├── departments/{index.php, index.view.php, partials/{create,edit,delete}-modal.php, actions/{store,update,delete}.php}
+│   │   ├── school-years/{index.php, index.view.php, partials/*, actions/*}
+│   │   ├── programs/{index.php, index.view.php, partials/*, actions/*}              # needs Department dropdown
+│   │   ├── levels/{index.php, index.view.php, partials/*, actions/*}                # needs Program dropdown + order
+│   │   ├── curricula/{index.php, index.view.php, partials/*, actions/*}              # needs Department dropdown
+│   │   ├── academic-terms/{index.php, index.view.php, partials/*, actions/*}         # needs SchoolYear + Department (nullable) + type + dates
+│   │   ├── subjects/{index.php, index.view.php, partials/{create,edit,delete,prerequisites-modal,prerequisites-list}.php, actions/{store,update,delete}.php} # Prereq JSON via api/
+│   │   └── prospectus/{index.php, index.view.php (filter + grouped Level→Term), partials/{create,edit,delete}-modal.php, actions/{store,update,delete}.php}
+│   ├── admission/, department/, accounting/, student/, teacher/, application/  # stubs (index.php “coming soon”)
+│   └── ...
 │
-├── api/                          # JSON endpoints for Fetch API (thin: load → Controller → JSON)
-│   ├── students/
-│   ├── programs/
+├── api/                          # Thin JSON endpoints for Fetch API (§5) – bootstrap → Controller → Service → json {success,data,html,message}
 │   ├── subjects/
-│   ├── enrollment/
-│   └── ... (one folder per module per §5)
+│   │   ├── prerequisites.php              # GET ?subject_id → {success, data, html}
+│   │   ├── search-prerequisites.php       # GET ?subject_id&q= → {success, data}
+│   │   ├── store-prerequisite.php         # POST subject_id + prerequisite_subject_id → {success, html}
+│   │   └── destroy-prerequisite.php       # POST subject_id + prerequisite_id → {success, html}
+│   └── prospectus/
+│       └── curricula-by-department.php    # GET ?department_id → {success, data}
+│   # other folders (students, programs, levels, teacher-offerings, enlistment, grades…) scaffolded with .gitkeep
 │
-├── config/
-│   └── database.php              # DB credentials (host, database=uca_nexus)
-│
-├── assets/                       # Static assets (CDN Tailwind in use)
-│   ├── css/
-│   ├── js/
-│   └── images/
-│
-├── public/                       # Compiled CSS output (optional, when using npm build)
-├── src/                          # Tailwind input (optional, CDN keeps this empty)
-│
-├── bootstrap.php                 # Session + autoloader (App\ → app/) + helpers
-└── index.php                     # Root redirect → views/login/index.php
+├── config/database.php           # host 127.0.0.1, database uca_nexus, user root
+├── bootstrap.php                 # session_start() + require config/database.php + Core/Database.php + Helpers/functions.php + Helpers/middleware.php + App\ autoloader
+├── index.php                     # → redirect views/login/index.php
+├── assets/{css,js,images}/       # CDN Tailwind in use (no build)
+└── public/, src/                 # optional compiled CSS (empty while CDN kept)
 ```
 
-> Apache: URL `http://localhost/laravel_project/unciano/views/admin/accounts/index.php` maps directly to the file.
-> CDN Tailwind (`https://cdn.tailwindcss.com`) is kept; `src/`/`public/` are optional until `npm run build` is needed.
+> Apache: `http://localhost/laravel_project/unciano/views/admin/accounts/index.php` maps directly to file. `views/registrar/*` same.
+> CDN Tailwind (`https://cdn.tailwindcss.com` + `tailwind.config` in `portal.php:26`/`auth.php:7`) is kept; `src/`/`public/` remain empty until `npm run build`.
+> Views use 2-file split: `index.php` (router: bootstrap → `ensureRegistrar()`/`ensureAdmin()` → Controller) + `index.view.php` (display only: `foreach`, `e()`, `include partials`, `json_encode` for JS). Posting forms goes to `views/.../actions/*.php` (POST → Controller → flash+redirect). Fetch JSON goes to `api/.../*.php` (GET/POST → Controller → `header('Content-Type: application/json')` → `exit`). See §3.1/§3.5 and §5.
+
+> **Built as of 2026-08-23:** `admin/Accounts` (faculty/teacher/student + dialogs, `hasDependents` block, strict `ensureAdmin`); `registrar Academic` core **Departments, SchoolYears, Programs, Levels, Curricula, AcademicTerms** (CRUD + Department/Program dropdowns, dates `end_date after start_date`, block delete if dependents), plus **Subjects** (code/description/unit/lech/lecu/labh/labu/type/education_level/status + prerequisites self-join search/add/remove via `api/subjects/*`) and **Prospectus** (filter Department→Curriculum via `api/prospectus/curricula-by-department.php`, grouped Level→Term view, 4-FK composite unique). Deferred: `subject_fee`/`Fee` sub-resource, `Prospectus` further polish, and other portals (`admission, department, accounting, student, teacher, application`) remain stubs.
 
 This structure can evolve as the system grows. Do not add folders or architectural layers unless they solve a real problem.
 
@@ -456,17 +459,18 @@ const response = await fetch(
 const data = await response.json();
 ```
 
-The endpoint:
+The endpoint (under `api/` for Fetch, thin – 4 lines `require bootstrap → new Controller()->method() → json`):
 
 ```text
-api/programs/get-by-department.php
+api/programs/get-by-department.php   // for Fetch JSON
+views/registrar/programs/actions/store.php  // for form POST → flash+redirect (not api)
 ```
 
-should:
+`api/` endpoint should:
 
-1. Load the required application files.
+1. Load the required application files (`bootstrap.php`).
 2. Call the controller.
-3. Return JSON.
+3. Return JSON (`header('Content-Type: application/json')` + `exit`).
 
 Example response format:
 
@@ -486,7 +490,7 @@ For errors:
 }
 ```
 
-Use a consistent JSON structure throughout the system.
+Use a consistent JSON structure throughout the system. Current `api/` built: `api/subjects/{prerequisites,search-prerequisites,store-prerequisite,destroy-prerequisite}.php` and `api/prospectus/curricula-by-department.php` (used by `views/registrar/subjects/index.view.php` and `prospectus/index.view.php` via `fetch` + `X-CSRF-TOKEN`). Other `api/*` folders remain `.gitkeep` scaffold.
 
 ---
 
@@ -636,21 +640,32 @@ Examples:
 ```text
 bootstrap.php
 app/Core/Database.php
-includes/header.php
-includes/footer.php
-includes/sidebar.php
+app/Helpers/functions.php   # url(), e(), csrf_*, auth(), flash(), redirect()
+app/Helpers/middleware.php  # ensureAdmin(), ensureRegistrar(), ensureRole() – strict, camelCase
+views/layouts/portal.php    # dialog.modal[open] + ::backdrop CSS
+views/layouts/auth.php      # CDN Tailwind
 ```
 
 ## bootstrap.php
 
 The bootstrap file can centralize common initialization.
 
+Current `bootstrap.php:1`:
+```php
+session_start();
+require config/database.php;
+require app/Core/Database.php;
+require app/Helpers/functions.php;
+require app/Helpers/middleware.php;
+spl_autoload_register(App\ → app/);
+```
+
 Examples:
 
 - Start the session.
 - Load configuration.
 - Load required classes.
-- Load helper functions.
+- Load helper functions + middleware.
 
 This prevents repeated setup code across pages.
 
