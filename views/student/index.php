@@ -1,7 +1,18 @@
 <?php
-// Student Dashboard
-$student = $currentUser;
-$studentName = trim(($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
+// Student Dashboard - expects $currentUser/$user from DashboardController or portal
+if (!isset($currentUser) && isset($user)) { $currentUser = $user; }
+if (!isset($currentUser) && isset($student) && is_array($student)) { $currentUser = $student; }
+$student = $student ?? $currentUser ?? $user ?? null;
+if (!is_array($student)) { $student = []; }
+// Direct access guard: if rendered without portal (no Tailwind), redirect to dashboard router
+if (!isset($content) && php_sapi_name() !== 'cli') {
+    $isDirect = basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'index.php' && str_contains($_SERVER['REQUEST_URI'] ?? '', '/views/student/index.php');
+    if ($isDirect) {
+        require_once __DIR__ . '/../../bootstrap.php';
+        if (!headers_sent()) { header('Location: ' . url('views/dashboard.php')); exit; }
+    }
+}
+$studentName = trim(($student['first_name'] ?? $student['name'] ?? '') . ' ' . ($student['last_name'] ?? ''));
 ?>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
