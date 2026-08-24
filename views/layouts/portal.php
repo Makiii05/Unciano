@@ -1,7 +1,17 @@
 <?php
-$authUser = require_auth();
-$currentUser = $authUser;
-$type = $currentUser['type'] ?? ($_SESSION['student_id'] ? 'student' : ($_SESSION['teacher_id'] ? 'teacher' : ''));
+if (isset($_SESSION['teacher_id'])) {
+    $authUser = require_auth('teacher');
+    $currentUser = $authUser;
+    $type = 'teacher';
+} elseif (isset($_SESSION['student_id'])) {
+    $authUser = require_auth('student');
+    $currentUser = $authUser;
+    $type = 'student';
+} else {
+    $authUser = require_auth();
+    $currentUser = $authUser;
+    $type = $currentUser['type'] ?? ($_SESSION['student_id'] ? 'student' : ($_SESSION['teacher_id'] ? 'teacher' : ''));
+}
 
 $portalTitle = match($type) {
     'admin' => 'Admin Portal',
@@ -74,7 +84,7 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
             <nav class="flex-1 overflow-y-auto p-3 space-y-1">
                 <?php
                 $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
-                $base = '/laravel_project/unciano/views';
+                $base = '/unciano/views';
 
                 $sidebar = match($type) {
                     'admin' => [
@@ -154,7 +164,7 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                     ],
                     'student' => [
                         ['section' => 'General', 'items' => [
-                            ['label' => 'Dashboard', 'url' => '/student/index.php', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+                            ['label' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
                         ]],
                         ['section' => 'Academic', 'items' => [
                             // ['label' => 'Subjects', 'url' => '/student/subjects.php', 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
@@ -170,7 +180,8 @@ $displayName = $currentUser['name'] ?? $currentUser['first_name'] ?? 'User';
                     ],
                     'teacher' => [
                         ['section' => 'General', 'items' => [
-                            ['label' => 'Subject Load', 'url' => '/teacher/index.php', 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
+                            ['label' => 'Dashboard', 'url' => '/dashboard.php', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+                            ['label' => 'Subject Load', 'url' => '/teacher/subject-load/index.php', 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
                         ]],
                         ['section' => 'Account', 'items' => [
                             ['label' => 'Change Password', 'url' => '/teacher/password.php', 'icon' => 'M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z'],

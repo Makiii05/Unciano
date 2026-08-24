@@ -30,6 +30,13 @@ class LevelService
         return $stmt->fetchAll();
     }
 
+    public function getByProgram(int $programId): array
+    {
+        $stmt = $this->db->prepare('SELECT id, code, description, program_id, `order` FROM levels WHERE program_id = ? ORDER BY `order`, code');
+        $stmt->execute([$programId]);
+        return $stmt->fetchAll();
+    }
+
     public function getById(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM levels WHERE id = ? LIMIT 1');

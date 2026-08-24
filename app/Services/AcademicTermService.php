@@ -33,6 +33,13 @@ class AcademicTermService
         return $stmt->fetchAll();
     }
 
+    public function getForDropdownByDepartment(int $departmentId): array
+    {
+        $stmt = $this->db->prepare('SELECT at.id, at.code, at.description, sy.code AS sy_code, sy.description AS sy_description FROM academic_terms at LEFT JOIN school_years sy ON sy.id=at.school_year_id WHERE at.department_id = ? ORDER BY at.start_date DESC, at.code');
+        $stmt->execute([$departmentId]);
+        return $stmt->fetchAll();
+    }
+
     public function getById(int $id): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM academic_terms WHERE id = ? LIMIT 1');

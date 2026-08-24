@@ -2,7 +2,7 @@
 
 function url(string $path = ''): string
 {
-    $base = '/laravel_project/unciano';
+    $base = '/unciano';
     $path = ltrim($path, '/');
     return $base . ($path ? '/' . $path : '');
 }

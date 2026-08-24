@@ -63,6 +63,11 @@ npm run build
 ## Database
 
 Import `uca-nexus.sql` into MySQL to set up the schema.
+Import `uca-nexus-data.sql` into MySQL to set up the schema.
+
+## Root Folder
+
+Change the root folder in `portal.php` and `function.php`
 
 ## Development Guide
 
